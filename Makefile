@@ -4,6 +4,7 @@ TOOLDIR=$(BASEDIR)/script
 BINARY=evoimage
 SOURCES := $(shell find $(BASEDIR) -name '*.go')
 TESTED=.tested
+IMGDIR=./imgs
 
 build: $(BINARY)
 $(BINARY): $(SOURCES) $(TESTED)
