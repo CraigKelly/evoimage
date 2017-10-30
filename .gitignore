@@ -1,6 +1,7 @@
 # project specific
 .tested
 evoimage
+latest.jpg
 
 # Binaries for programs and plugins
 *.exe

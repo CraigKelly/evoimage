@@ -43,5 +43,17 @@ func main() {
 
 	log.Printf("Mutation:%f, Crossover:%f, Population:%d, Target:%s\n", *mutationRate, *crossOverRate, *popSize, *image)
 
+	log.Printf("Loading image %s\n", *image)
+	target, err := NewImageTarget(*image)
+	pcheck(err)
+	target.ImageMode()
+
+	tst := NewIndividual(target)
+	log.Printf("Random target has fit %f => saved to latest.jpg\n", tst.Fitness(target))
+	log.Printf("Target data: fit=%f img=%v\n", tst.fitness, tst.imageData.Bounds())
+	tst.Save("latest.jpg")
+
+	// TODO: image init and comparison
+
 	os.Exit(0)
 }
