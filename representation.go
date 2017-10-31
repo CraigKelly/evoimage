@@ -123,6 +123,7 @@ func NewGene(src *ImageTarget) *Gene {
 
 // Individual is a single candidate individual in a population
 type Individual struct {
+	target    *ImageTarget
 	fitness   float64
 	imageData image.Image
 	needImage bool
@@ -133,6 +134,7 @@ type Individual struct {
 func NewIndividual(src *ImageTarget) *Individual {
 	// For now we have a fixed genome
 	ind := Individual{
+		target:    src,
 		fitness:   -1.0,
 		needImage: true,
 	}
@@ -143,14 +145,14 @@ func NewIndividual(src *ImageTarget) *Individual {
 }
 
 // Fitness calculates the individual's fitness score (to be minimized) using lazy and cached evaluation
-func (i *Individual) Fitness(src *ImageTarget) float64 {
+func (i *Individual) Fitness() float64 {
 	if !i.needImage {
 		return i.fitness
 	}
 
 	// init image: color entire rectange from src.ImageMode
-	img := image.NewRGBA(src.imageData.Bounds())
-	draw.Draw(img, img.Bounds(), &image.Uniform{src.ImageMode()}, image.ZP, draw.Src)
+	img := image.NewRGBA(i.target.imageData.Bounds())
+	draw.Draw(img, img.Bounds(), &image.Uniform{i.target.ImageMode()}, image.ZP, draw.Src)
 
 	// Now we need to draw all the rectangles in our genome
 	for _, gene := range i.genes {
@@ -164,12 +166,10 @@ func (i *Individual) Fitness(src *ImageTarget) float64 {
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
 			c1 := img.At(x, y)
-			c2 := src.imageData.At(x, y)
+			c2 := i.target.imageData.At(x, y)
 			fitness += colorDist(c1, c2)
 		}
 	}
-
-	fitness = math.Log(fitness)
 
 	// all done - store our results and return the fitness
 	i.fitness = fitness
@@ -196,4 +196,23 @@ func (i *Individual) Save(fileName string) error {
 	}
 
 	return nil
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Sort order for individual
+
+// Population is a collection type that provides sorting and some helpers
+type Population []*Individual
+
+func (a Population) Len() int           { return len(a) }
+func (a Population) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a Population) Less(i, j int) bool { return a[i].Fitness() < a[j].Fitness() }
+
+// MeanFitness calculates arithmetic mean of the population
+func (a Population) MeanFitness() float64 {
+	tot := float64(0.0)
+	for _, i := range a {
+		tot += i.Fitness()
+	}
+	return tot / float64(len(a))
 }
