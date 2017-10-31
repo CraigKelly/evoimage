@@ -138,24 +138,28 @@ func NewIndividual(src *ImageTarget) *Individual {
 		fitness:   -1.0,
 		needImage: true,
 	}
-	for i := 0; i < len(ind.genes); i++ {
-		ind.genes[i] = NewGene(src)
-	}
 	return &ind
 }
 
+// RandInit initializes the individual to a random state
+func (ind *Individual) RandInit() {
+	for i := 0; i < len(ind.genes); i++ {
+		ind.genes[i] = NewGene(ind.target)
+	}
+}
+
 // Fitness calculates the individual's fitness score (to be minimized) using lazy and cached evaluation
-func (i *Individual) Fitness() float64 {
-	if !i.needImage {
-		return i.fitness
+func (ind *Individual) Fitness() float64 {
+	if !ind.needImage {
+		return ind.fitness
 	}
 
 	// init image: color entire rectange from src.ImageMode
-	img := image.NewRGBA(i.target.imageData.Bounds())
-	draw.Draw(img, img.Bounds(), &image.Uniform{i.target.ImageMode()}, image.ZP, draw.Src)
+	img := image.NewRGBA(ind.target.imageData.Bounds())
+	draw.Draw(img, img.Bounds(), &image.Uniform{ind.target.ImageMode()}, image.ZP, draw.Src)
 
 	// Now we need to draw all the rectangles in our genome
-	for _, gene := range i.genes {
+	for _, gene := range ind.genes {
 		draw.Draw(img, gene.destBounds, &image.Uniform{gene.destColor}, image.ZP, draw.Over)
 	}
 
@@ -166,20 +170,20 @@ func (i *Individual) Fitness() float64 {
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
 			c1 := img.At(x, y)
-			c2 := i.target.imageData.At(x, y)
+			c2 := ind.target.imageData.At(x, y)
 			fitness += colorDist(c1, c2)
 		}
 	}
 
 	// all done - store our results and return the fitness
-	i.fitness = fitness
-	i.imageData = img
-	i.needImage = false
-	return i.fitness
+	ind.fitness = fitness
+	ind.imageData = img
+	ind.needImage = false
+	return ind.fitness
 }
 
 // Save the individual as a JPEG using the given file name
-func (i *Individual) Save(fileName string) error {
+func (ind *Individual) Save(fileName string) error {
 	fimg, ferr := os.Create(fileName)
 	if ferr != nil {
 		return ferr
@@ -190,10 +194,12 @@ func (i *Individual) Save(fileName string) error {
 		Quality: 99,
 	}
 
-	ierr := jpeg.Encode(fimg, i.imageData, opts)
+	ierr := jpeg.Encode(fimg, ind.imageData, opts)
 	if ierr != nil {
 		return ierr
 	}
+
+	log.Printf("Wrote file %s\n", fileName)
 
 	return nil
 }

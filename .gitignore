@@ -2,6 +2,7 @@
 .tested
 evoimage
 latest.jpg
+output/
 
 # Binaries for programs and plugins
 *.exe
