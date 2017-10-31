@@ -31,33 +31,36 @@ func colorDist(c1 color.Color, c2 color.Color) float64 {
 //////////////////////////////////////////////////////////////////////////
 // Our target image
 
+// ImageTarget is the image we are actually trying to reproduce
 type ImageTarget struct {
 	fileName  string
 	imageData image.Image
 	imageMode *color.Color
 }
 
-func NewImageTarget(fileName string) (ImageTarget, error) {
+// NewImageTarget creates a new ImageTarget instance from the JPEG file
+func NewImageTarget(fileName string) (*ImageTarget, error) {
 	fimg, err := os.Open(fileName)
 	if err != nil {
-		return ImageTarget{}, err
+		return nil, err
 	}
 	defer fimg.Close()
 
 	img, err := jpeg.Decode(fimg)
 	if err != nil {
-		return ImageTarget{}, err
+		return nil, err
 	}
 
 	log.Printf("%s %v %v\n", fileName, img.ColorModel(), img.Bounds())
 
-	return ImageTarget{
+	return &ImageTarget{
 		fileName:  fileName,
 		imageData: img,
 	}, nil
 }
 
-func (it ImageTarget) ImageMode() color.Color {
+// ImageMode returns the most common color in the image (use as a background color)
+func (it *ImageTarget) ImageMode() color.Color {
 	if it.imageMode != nil {
 		return *it.imageMode
 	}
@@ -67,7 +70,7 @@ func (it ImageTarget) ImageMode() color.Color {
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
 			clr := it.imageData.At(x, y)
-			counts[clr] += 1
+			counts[clr]++
 		}
 	}
 
@@ -88,12 +91,14 @@ func (it ImageTarget) ImageMode() color.Color {
 //////////////////////////////////////////////////////////////////////////
 // Genes - single encoded feature
 
+// Gene represents single item in a genome
 type Gene struct {
 	destBounds image.Rectangle
 	destColor  color.Color
 }
 
-func NewGene(src ImageTarget) Gene {
+// NewGene creates a random gene instance
+func NewGene(src *ImageTarget) *Gene {
 	b := src.imageData.Bounds()
 	yrng := (b.Max.Y - b.Min.Y) + 1
 	xrng := (b.Max.X - b.Min.X) + 1
@@ -107,7 +112,7 @@ func NewGene(src ImageTarget) Gene {
 		uint8(rand.Intn(256)),
 	}
 
-	return Gene{
+	return &Gene{
 		destBounds: image.Rectangle{pt1, pt2}.Canon(),
 		destColor:  clr,
 	}
@@ -116,14 +121,16 @@ func NewGene(src ImageTarget) Gene {
 //////////////////////////////////////////////////////////////////////////
 // Our candidate image - aka an individual genome, made up of Gene's
 
+// Individual is a single candidate individual in a population
 type Individual struct {
 	fitness   float64
 	imageData image.Image
 	needImage bool
-	genes     [200]Gene
+	genes     [200]*Gene
 }
 
-func NewIndividual(src ImageTarget) *Individual {
+// NewIndividual creates a random individual
+func NewIndividual(src *ImageTarget) *Individual {
 	// For now we have a fixed genome
 	ind := Individual{
 		fitness:   -1.0,
@@ -135,7 +142,8 @@ func NewIndividual(src ImageTarget) *Individual {
 	return &ind
 }
 
-func (i *Individual) Fitness(src ImageTarget) float64 {
+// Fitness calculates the individual's fitness score (to be minimized) using lazy and cached evaluation
+func (i *Individual) Fitness(src *ImageTarget) float64 {
 	if !i.needImage {
 		return i.fitness
 	}
@@ -146,7 +154,7 @@ func (i *Individual) Fitness(src ImageTarget) float64 {
 
 	// Now we need to draw all the rectangles in our genome
 	for _, gene := range i.genes {
-		draw.Draw(img, gene.destBounds, &image.Uniform{gene.destColor}, image.ZP, draw.Src)
+		draw.Draw(img, gene.destBounds, &image.Uniform{gene.destColor}, image.ZP, draw.Over)
 	}
 
 	// calculate fitness - the sum of the color distance pixel by pixel
@@ -161,6 +169,8 @@ func (i *Individual) Fitness(src ImageTarget) float64 {
 		}
 	}
 
+	fitness = math.Log(fitness)
+
 	// all done - store our results and return the fitness
 	i.fitness = fitness
 	i.imageData = img
@@ -168,6 +178,7 @@ func (i *Individual) Fitness(src ImageTarget) float64 {
 	return i.fitness
 }
 
+// Save the individual as a JPEG using the given file name
 func (i *Individual) Save(fileName string) error {
 	fimg, ferr := os.Create(fileName)
 	if ferr != nil {
