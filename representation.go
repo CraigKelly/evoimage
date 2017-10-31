@@ -15,17 +15,16 @@ import (
 // Helpers
 
 // colorDist return a positive measure of distance between two colors
-// currently this is Euclidean distance
+// currently this is Euclidean distance ignoring Alpha
 func colorDist(c1 color.Color, c2 color.Color) float64 {
-	r1, g1, b1, a1 := c1.RGBA()
-	r2, g2, b2, a2 := c2.RGBA()
+	r1, g1, b1, _ := c1.RGBA()
+	r2, g2, b2, _ := c2.RGBA()
 
 	rd := math.Pow(float64(r1)-float64(r2), 2.0)
 	gd := math.Pow(float64(g1)-float64(g2), 2.0)
 	bd := math.Pow(float64(b1)-float64(b2), 2.0)
-	ad := math.Pow(float64(a1)-float64(a2), 2.0)
 
-	return math.Sqrt(rd + gd + bd + ad)
+	return math.Sqrt(rd + gd + bd)
 }
 
 //////////////////////////////////////////////////////////////////////////
