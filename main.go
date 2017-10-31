@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"errors"
 	"flag"
 	"fmt"
@@ -82,6 +83,16 @@ func main() {
 	pcheck(err)
 	target.ImageMode()
 
+	logFileName := fmt.Sprintf("logs/%s-log.csv", *image)
+	log.Printf("Opening log file %s\n", logFileName)
+	logf, err := os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	pcheck(err)
+	dataLog := csv.NewWriter(logf)
+	defer dataLog.Flush()
+	defer logf.Close()
+	// Always write a title line - that way we can detect restarts
+	pcheck(dataLog.Write([]string{"Gen", "Best", "Worst", "Avg", "Timestamp"}))
+
 	log.Printf("Creating init pop of %d\n", *popSize)
 	population := Population(make([]*Individual, 0, *popSize))
 	for i := 0; i < *popSize; i++ {
@@ -110,7 +121,15 @@ func main() {
 		log.Printf("Best  Individual: fit %.2f (L %.4f) => latest.jpg\n", best, math.Log(best))
 		log.Printf("Worst Individual: fit %.2f (L %.4f)\n", worst, math.Log(worst))
 		log.Printf("             Mean fit %.2f (L %.4f)\n", avg, math.Log(avg))
-		// TODO: need log file for all this
+
+		pcheck(dataLog.Write([]string{
+			fmt.Sprintf("%d", generation),
+			fmt.Sprintf("%.5f", best),
+			fmt.Sprintf("%.5f", worst),
+			fmt.Sprintf("%.5f", avg),
+			time.Now().Format("2006-01-02 15:04:05"),
+		}))
+		dataLog.Flush()
 
 		population[0].Save(fmt.Sprintf("output/gen-%010d.jpg", generation))
 		// TODO: see about putting fitness on image
