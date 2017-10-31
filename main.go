@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"os"
 	"runtime"
@@ -103,11 +104,16 @@ func main() {
 
 		log.Printf("Sorting...\n")
 		sort.Sort(population)
-		log.Printf("Best  Individual: fit %.2f => latest.jpg\n", population[0].Fitness())
-		log.Printf("Worst Individual: fit %.2f\n", population[len(population)-1].Fitness())
-		log.Printf("             Mean fit %.2f\n", population.MeanFitness())
+		best := population[0].Fitness()
+		worst := population[len(population)-1].Fitness()
+		avg := population.MeanFitness()
+		log.Printf("Best  Individual: fit %.2f (L %.4f) => latest.jpg\n", best, math.Log(best))
+		log.Printf("Worst Individual: fit %.2f (L %.4f)\n", worst, math.Log(worst))
+		log.Printf("             Mean fit %.2f (L %.4f)\n", avg, math.Log(avg))
+		// TODO: need log file for all this
 
 		population[0].Save(fmt.Sprintf("output/gen-%010d.jpg", generation))
+		// TODO: see about putting fitness on image
 		population[0].Save("latest.jpg")
 
 		fmt.Printf("Creating new population\n")
@@ -119,10 +125,6 @@ func main() {
 			population = append(population, oldPop[i])
 		}
 
-		// We also add in some randomness
-		population = append(population, NewIndividual(target))
-		population[len(population)-1].RandInit()
-
 		// Now create rest of population with selection/crossover/mutation
 		for len(population) < *popSize {
 			// Select with tournament selection
@@ -133,17 +135,6 @@ func main() {
 
 			population = append(population, Mutation(child1, *mutationRate))
 			population = append(population, Mutation(child2, *mutationRate))
-		}
-
-		removeCount := 0
-		for _, p := range population {
-			if p.needImage {
-				removeCount++
-			}
-		}
-		fmt.Printf("need image count: %d\n", removeCount)
-		if removeCount < 1 {
-			panic("DOH")
 		}
 	}
 

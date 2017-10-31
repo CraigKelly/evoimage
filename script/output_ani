@@ -3,4 +3,4 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR/../output"
 
-ffmpeg -framerate 24 -i 'gen-%010d.jpg' -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" output.mp4
+ffmpeg -framerate 48 -i 'gen-%010d.jpg' -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" output.mp4
