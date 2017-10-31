@@ -146,6 +146,11 @@ func main() {
 			population = append(population, oldPop[i])
 		}
 
+		// Elitism part 2 - we create a shuffled version of the 10 best individuals
+		for i := 0; i < 10; i++ {
+			population = append(population, Shuffle(oldPop[i]))
+		}
+
 		// Now create rest of population with selection/crossover/mutation
 		for len(population) < *popSize {
 			// Select with tournament selection

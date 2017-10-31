@@ -11,3 +11,12 @@ func Mutation(ind *Individual, rate float64) *Individual {
 	}
 	return ind
 }
+
+// Shuffle provides a complete shuffle of the genome (since order matters)
+func Shuffle(ind *Individual) *Individual {
+	clone := NewIndividual(ind.target)
+	for write, read := range rand.Perm(len(clone.genes)) {
+		clone.genes[write] = ind.genes[read]
+	}
+	return clone
+}
