@@ -9,6 +9,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"sync"
@@ -83,7 +84,8 @@ func main() {
 	pcheck(err)
 	target.ImageMode()
 
-	logFileName := fmt.Sprintf("logs/%s-log.csv", *image)
+	_, imageBase := filepath.Split(*image)
+	logFileName := fmt.Sprintf("logs/%s-log.csv", imageBase)
 	log.Printf("Opening log file %s\n", logFileName)
 	logf, err := os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	pcheck(err)
