@@ -4,19 +4,21 @@ Simple attempt at evolving image reproductions
 
 ## Overview
 
-This is currently very experimental. See `main.go` for command line options and
-the main loop. See `representation.go` for the main representation and
-encoding.
+This project is currently experimental (as in pre-alpha). Once it is stabilized
+and there have been some decent results we will add a Results section. See
+`main.go` for command line options and the main loop. See `representation.go`
+for the main representation and encoding.
 
 ## Implementation
 
-The main loop is fairly simple but includes some adaptations during the
-run.
+The main loop is a standard generational GA, but includes some adaptations
+during the run. (Note that we equate "making progress" with an increase in the
+best individual - which is a decrease is our minimized fitness score).
 
 * We use elitism (see Elitism below)
-* Mutation rate is increased when progress isn't being made (see Mutation below)
-* The population size increases every generation progress isn't made, but returns
-  to the default level when progress is seen
+* Mutation rate is increased when progress has stalled (see Mutation below)
+* The population size increases every generation progress is not made, but returns
+  to the default level when progress resumes
 * Tournament size is rotated (see Selection below)
 
 ## Fitness Function
@@ -41,7 +43,7 @@ See `representation.go`.
 ## Selection
 
 Selection is currently tournament selection. The main loop uses a rotating
-tournement size (2-5 inclusive).
+tournament size (2-5 inclusive).
 
 See `selection.go` and `main.go`.
 
@@ -73,14 +75,15 @@ shuffled.
 
 ## Building and running
 
-This project is developed in Go, is built with GNU make, and uses bash and
-for simple scripting. Currently built with:
+To build this project, you need Go 1.9 and recent version of GNU Make running
+in a bash shell (modern bash is preferred). All builds and runs have been
+performed on Ubuntu 16.04 and 17.04, so everything you need can be installed
+via apt. However, please note that you will need to install Go 1.9 (or later)
+manually. You can use ubuntu-make for this - see
+https://github.com/ubuntu/ubuntu-make
 
-* Go version 1.9
-* GNU Make 4.1
-* Default bash on Ubuntu 16.04 and 17.04 have both been tested
-* ffmpeg at or above version 2.8.11. The version available from apt in
-  Ubuntu 16.04 and later should be fine
+Go is cross-platform, so you should be able to build on Windows or Mac OSX, bu
+that has not been tested.
 
 Go dependencies are managed with `dep` (see https://github.com/golang/dep for
 details), but you shouldn't need to worry about that unless you are adding or
@@ -94,9 +97,11 @@ After building, run `./evoimage -h` to see all parameter options.
 To run on an image with all default parameters, you only need to supply the
 `-image` parameter.  For example, `./evoimage -image imgs/target-mondrian.jpg`. 
 
-Log files are appended to in the `log` directory during the run. The best image
-for each generation is written to the `output` directory. The last best image
-is written as `./latest.jpg`.
+`evoimage` appends to log files (named for the target image) in the `log`
+directory during the run.  It also writes the best image for each generation to
+the `output` directory. Image name formats use the generation number but not
+the file name, so you should save or clear the output directory before starting
+a new run. We also write the best image as `./latest.jpg`.
 
 Running `./script/output_ani` will take all current images in the output
 directory and create an mp4 video showing progress. Note that `ffmpeg` must be
