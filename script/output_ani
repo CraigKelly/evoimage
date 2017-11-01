@@ -1,6 +1,6 @@
 #!/bin/bash
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "$SCRIPT_DIR/../output"
+cd "$SCRIPT_DIR/../output" || echo "Could not find output dir: this will probably fail"
 
 ffmpeg -framerate 48 -i 'gen-%010d.jpg' -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" output.mp4
