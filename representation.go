@@ -126,7 +126,7 @@ type Individual struct {
 	fitness   float64
 	imageData image.Image
 	needImage bool
-	genes     [200]*Gene
+	genes     [128]*Gene
 }
 
 // NewIndividual creates a random individual
@@ -198,7 +198,7 @@ func (ind *Individual) Save(fileName string) error {
 		return ierr
 	}
 
-	log.Printf("Wrote file %s\n", fileName)
+	//log.Printf("Wrote file %s\n", fileName)
 
 	return nil
 }

@@ -28,7 +28,7 @@ func evalPop(pop Population, cores int) {
 	wait := sync.WaitGroup{}
 	wait.Add(cores)
 
-	work := make(chan int, 8)
+	work := make(chan int, 256)
 
 	for c := 0; c < cores; c++ {
 		go func() {
@@ -52,9 +52,9 @@ func evalPop(pop Population, cores int) {
 
 func main() {
 	flags := flag.NewFlagSet("evoimage", flag.ExitOnError)
-	mutationRate := flags.Float64("mutationRate", 0.01, "Mutation rate to use")
-	crossOverRate := flags.Float64("crossoverRate", 0.7, "Crossover rate to use")
-	popSize := flags.Int("popSize", 100, "Population size in a generation")
+	mutationRate := flags.Float64("mutationRate", 0.10, "Mutation rate to use")
+	crossOverRate := flags.Float64("crossoverRate", 0.60, "Crossover rate to use")
+	popSize := flags.Int("popSize", 300, "Population size in a generation")
 	image := flags.String("image", "", "File name of target image")
 
 	pcheck(flags.Parse(os.Args[1:]))
@@ -109,20 +109,40 @@ func main() {
 	}
 	log.Printf("Working with %d cores\n", cores)
 
-	for generation := 0; generation < 100000; generation++ {
-		log.Printf("Generation %d\n", generation)
+	tournSize := 1 // special: first tournament size will be two
+	lastBest := float64(0.0)
+	stallCount := 0
+	adaptMutRate := *mutationRate
+	adaptPopSize := *popSize
 
+	for generation := 0; generation < 100000; generation++ {
 		// Image creation and evaluation across all cores
 		evalPop(population, cores)
 
-		log.Printf("Sorting...\n")
+		// Now we can sort and find best/worst
 		sort.Sort(population)
 		best := population[0].Fitness()
 		worst := population[len(population)-1].Fitness()
 		avg := population.MeanFitness()
-		log.Printf("Best  Individual: fit %.2f (L %.4f) => latest.jpg\n", best, math.Log(best))
-		log.Printf("Worst Individual: fit %.2f (L %.4f)\n", worst, math.Log(worst))
-		log.Printf("             Mean fit %.2f (L %.4f)\n", avg, math.Log(avg))
+
+		if math.Abs(best-lastBest) < 0.0000001 {
+			stallCount++
+		} else {
+			stallCount = 0
+		}
+		lastBest = best
+
+		tournSize++
+		if tournSize > 5 {
+			tournSize = 2
+		}
+
+		adaptMutRate = *mutationRate + (0.015 * float64(stallCount))
+		if adaptMutRate > 0.25 {
+			adaptMutRate = 0.25
+		}
+
+		adaptPopSize = *popSize + (stallCount * 2)
 
 		pcheck(dataLog.Write([]string{
 			fmt.Sprintf("%d", generation),
@@ -133,34 +153,44 @@ func main() {
 		}))
 		dataLog.Flush()
 
+		log.Printf(
+			"Gen:%5d PS:%5d SC:%d,TS:%d,MR:%.5f best %.2f (L %.4f) <=> avg %.2f (L %.4f) <=> worst %.2f (L %.4f)\n",
+			generation, len(population),
+			stallCount, tournSize, adaptMutRate,
+			best, math.Log(best),
+			avg, math.Log(avg),
+			worst, math.Log(worst),
+		)
+
 		population[0].Save(fmt.Sprintf("output/gen-%010d.jpg", generation))
-		// TODO: see about putting fitness on image
 		population[0].Save("latest.jpg")
 
-		fmt.Printf("Creating new population\n")
 		oldPop := population
 		population = Population(make([]*Individual, 0, *popSize))
 
-		// Elitism - we keep best 10 individuals
-		for i := 0; i < 10; i++ {
+		// Elitism - we keep best 5 individuals AND a shuffled copy of the best 5
+		for i := 0; i < 5; i++ {
 			population = append(population, oldPop[i])
-		}
-
-		// Elitism part 2 - we create a shuffled version of the 10 best individuals
-		for i := 0; i < 10; i++ {
 			population = append(population, Shuffle(oldPop[i]))
 		}
 
 		// Now create rest of population with selection/crossover/mutation
-		for len(population) < *popSize {
+		for len(population) < adaptPopSize {
 			// Select with tournament selection
-			parent1 := Selection(oldPop)
-			parent2 := Selection(oldPop)
+			parent1 := Selection(oldPop, tournSize)
+			parent2 := Selection(oldPop, tournSize)
 
 			child1, child2 := Crossover(parent1, parent2, *crossOverRate)
 
-			population = append(population, Mutation(child1, *mutationRate))
-			population = append(population, Mutation(child2, *mutationRate))
+			population = append(population, Mutation(child1, adaptMutRate))
+			population = append(population, Mutation(child2, adaptMutRate))
+		}
+
+		// Inject randomness if we are stalled
+		for i := 0; i < (stallCount/2)+1; i++ {
+			ind := NewIndividual(target)
+			ind.RandInit()
+			population = append(population, ind)
 		}
 	}
 
