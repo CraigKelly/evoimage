@@ -13,7 +13,7 @@ import (
 
 // TODO: make sure adaptive stuff is properly documented
 // TODO: update docs about fitness scaled by max fitness
-// TODO: update docs about guassian mutation 
+// TODO: update docs about guassian mutation
 // TODO: use triangles instead of rectangle
 // TODO: allow size limiting of rectangles AND report size across solutions
 // TODO: need table with triangle count and size with outputs
@@ -167,7 +167,7 @@ func NewGene(src *ImageTarget) *Gene {
 		R: uint8(rand.Intn(256)),
 		G: uint8(rand.Intn(256)),
 		B: uint8(rand.Intn(256)),
-		A: uint8(rand.Intn(128)),
+		A: uint8(rand.Intn(8)),
 	}
 
 	return &Gene{
