@@ -154,12 +154,10 @@ func main() {
 		dataLog.Flush()
 
 		log.Printf(
-			"Gen:%5d PS:%5d SC:%d,TS:%d,MR:%.5f best %.2f (L %.4f) <=> avg %.2f (L %.4f) <=> worst %.2f (L %.4f)\n",
+			"Gen:%5d PS:%5d SC:%d,TS:%d,MR:%.5f best %.2f <=> avg %.2f <=> worst %.2f\n",
 			generation, len(population),
 			stallCount, tournSize, adaptMutRate,
-			best, math.Log(best),
-			avg, math.Log(avg),
-			worst, math.Log(worst),
+			best, avg, worst,
 		)
 
 		population[0].Save(fmt.Sprintf("output/gen-%010d.jpg", generation))
@@ -187,7 +185,7 @@ func main() {
 		}
 
 		// Inject randomness if we are stalled
-		for i := 0; i < (stallCount/2)+1; i++ {
+		for i := 0; i < (stallCount / 2); i++ {
 			ind := NewIndividual(target)
 			ind.RandInit()
 			population = append(population, ind)

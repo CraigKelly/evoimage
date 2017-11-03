@@ -11,18 +11,23 @@ import (
 	"os"
 )
 
+// TODO: make sure adaptive stuff is properly documented
+// TODO: update docs about fitness scaled by max fitness
+// TODO: update docs about guassian mutation 
+// TODO: use triangles instead of rectangle
+// TODO: allow size limiting of rectangles AND report size across solutions
+// TODO: need table with triangle count and size with outputs
+// TODO: consider a goroutine for logging once we add triangle size/count to log
+
 //////////////////////////////////////////////////////////////////////////
 // Helpers
 
 // colorDist return a positive measure of distance between two colors
 // currently this is Euclidean distance ignoring Alpha
-func colorDist(c1 color.Color, c2 color.Color) float64 {
-	r1, g1, b1, _ := c1.RGBA()
-	r2, g2, b2, _ := c2.RGBA()
-
-	rd := math.Pow(float64(r1)-float64(r2), 2.0)
-	gd := math.Pow(float64(g1)-float64(g2), 2.0)
-	bd := math.Pow(float64(b1)-float64(b2), 2.0)
+func colorDist(c1 color.RGBA, c2 color.RGBA) float64 {
+	rd := math.Pow(float64(c1.R)-float64(c2.R), 2.0)
+	gd := math.Pow(float64(c1.G)-float64(c2.G), 2.0)
+	bd := math.Pow(float64(c1.B)-float64(c2.B), 2.0)
 
 	return math.Sqrt(rd + gd + bd)
 }
@@ -32,9 +37,11 @@ func colorDist(c1 color.Color, c2 color.Color) float64 {
 
 // ImageTarget is the image we are actually trying to reproduce
 type ImageTarget struct {
-	fileName  string
-	imageData image.Image
-	imageMode *color.Color
+	fileName   string
+	imageData  *image.RGBA
+	imageMode  *color.RGBA
+	imageMean  *color.RGBA
+	maxFitness float64
 }
 
 // NewImageTarget creates a new ImageTarget instance from the JPEG file
@@ -45,35 +52,56 @@ func NewImageTarget(fileName string) (*ImageTarget, error) {
 	}
 	defer fimg.Close()
 
-	img, err := jpeg.Decode(fimg)
+	simg, err := jpeg.Decode(fimg)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("%s %v %v\n", fileName, img.ColorModel(), img.Bounds())
+	// Make sure that the image is actually in RGBA format
+	b := simg.Bounds()
+	img := image.NewRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
+	draw.Draw(img, img.Bounds(), simg, b.Min, draw.Src)
+
+	// Calculate max fitness
+	b = img.Bounds()
+	yrng := (b.Max.Y - b.Min.Y) + 1
+	xrng := (b.Max.X - b.Min.X) + 1
+	pixCount := float64(xrng * yrng)
+	oneMax := math.Sqrt(255.0 * 255.0 * 3.0) // 255 squared times 3 for RGB
+	maxFit := pixCount * oneMax
+
+	log.Printf("%s %v %v (mf=%f)\n", fileName, img.ColorModel(), img.Bounds(), maxFit)
 
 	return &ImageTarget{
-		fileName:  fileName,
-		imageData: img,
+		fileName:   fileName,
+		imageData:  img,
+		maxFitness: maxFit,
 	}, nil
 }
 
-// ImageMode returns the most common color in the image (use as a background color)
-func (it *ImageTarget) ImageMode() color.Color {
-	if it.imageMode != nil {
-		return *it.imageMode
-	}
+func (it *ImageTarget) calcStats() {
+	counts := make(map[color.RGBA]uint)
+	bnd := it.imageData.Bounds()
+	pixCount := 0
+	r := float64(0.0)
+	g := float64(0.0)
+	b := float64(0.0)
+	a := float64(0.0)
 
-	counts := make(map[color.Color]uint)
-	b := it.imageData.Bounds()
-	for y := b.Min.Y; y < b.Max.Y; y++ {
-		for x := b.Min.X; x < b.Max.X; x++ {
-			clr := it.imageData.At(x, y)
+	var clr color.RGBA
+	for y := bnd.Min.Y; y < bnd.Max.Y; y++ {
+		for x := bnd.Min.X; x < bnd.Max.X; x++ {
+			clr = it.imageData.RGBAAt(x, y)
 			counts[clr]++
+			pixCount++
+			r += float64(clr.R)
+			g += float64(clr.G)
+			b += float64(clr.B)
+			a += float64(clr.A)
 		}
 	}
 
-	var modeClr color.Color
+	var modeClr color.RGBA
 	var modeCount uint
 	for clr, count := range counts {
 		if count > modeCount {
@@ -82,9 +110,35 @@ func (it *ImageTarget) ImageMode() color.Color {
 		}
 	}
 
-	log.Printf("Most frequent color is %v with %d occurs\n", modeClr, modeCount)
+	pc := float64(pixCount)
+	meanClr := color.RGBA{
+		R: uint8(r / pc),
+		G: uint8(g / pc),
+		B: uint8(b / pc),
+		A: uint8(a / pc),
+	}
+
+	log.Printf("Colors => mean=%v, mode=%v with %d occurs\n", meanClr, modeClr, modeCount)
 	it.imageMode = &modeClr
-	return modeClr
+	it.imageMean = &meanClr
+}
+
+// ImageMode returns the most common color in the image (use as a background color)
+func (it *ImageTarget) ImageMode() color.RGBA {
+	if it.imageMode == nil {
+		it.calcStats()
+	}
+
+	return *it.imageMode
+}
+
+// ImageMean return the average color (by averaging each color channel)
+func (it *ImageTarget) ImageMean() color.RGBA {
+	if it.imageMean == nil {
+		it.calcStats()
+	}
+
+	return *it.imageMean
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -92,8 +146,8 @@ func (it *ImageTarget) ImageMode() color.Color {
 
 // Gene represents single item in a genome
 type Gene struct {
-	destBounds image.Rectangle
-	destColor  color.Color
+	destBounds *image.Rectangle
+	destColor  *color.RGBA
 }
 
 // NewGene creates a random gene instance
@@ -101,19 +155,24 @@ func NewGene(src *ImageTarget) *Gene {
 	b := src.imageData.Bounds()
 	yrng := (b.Max.Y - b.Min.Y) + 1
 	xrng := (b.Max.X - b.Min.X) + 1
-	pt1 := image.Pt(rand.Intn(xrng)+b.Min.X, rand.Intn(yrng)+b.Min.Y)
-	pt2 := image.Pt(rand.Intn(xrng)+b.Min.X, rand.Intn(yrng)+b.Min.Y)
 
-	clr := color.RGBA{
-		uint8(rand.Intn(256)),
-		uint8(rand.Intn(256)),
-		uint8(rand.Intn(256)),
-		uint8(rand.Intn(256)),
+	// Copy the canonical rectangle for our pointer below
+	var rct image.Rectangle
+	rct = image.Rect(
+		rand.Intn(xrng)+b.Min.X, rand.Intn(yrng)+b.Min.Y,
+		rand.Intn(xrng)+b.Min.X, rand.Intn(yrng)+b.Min.Y,
+	)
+
+	var clr color.RGBA = color.RGBA{
+		R: uint8(rand.Intn(256)),
+		G: uint8(rand.Intn(256)),
+		B: uint8(rand.Intn(256)),
+		A: uint8(rand.Intn(128)),
 	}
 
 	return &Gene{
-		destBounds: image.Rectangle{pt1, pt2}.Canon(),
-		destColor:  clr,
+		destBounds: &rct,
+		destColor:  &clr,
 	}
 }
 
@@ -159,7 +218,7 @@ func (ind *Individual) Fitness() float64 {
 
 	// Now we need to draw all the rectangles in our genome
 	for _, gene := range ind.genes {
-		draw.Draw(img, gene.destBounds, &image.Uniform{gene.destColor}, image.ZP, draw.Over)
+		draw.Draw(img, *gene.destBounds, &image.Uniform{gene.destColor}, image.ZP, draw.Over)
 	}
 
 	// calculate fitness - the sum of the color distance pixel by pixel
@@ -168,11 +227,14 @@ func (ind *Individual) Fitness() float64 {
 	b := img.Bounds()
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
-			c1 := img.At(x, y)
-			c2 := ind.target.imageData.At(x, y)
+			c1 := img.RGBAAt(x, y)
+			c2 := ind.target.imageData.RGBAAt(x, y)
 			fitness += colorDist(c1, c2)
 		}
 	}
+
+	// Scale by the maxmimum error
+	fitness = (fitness / ind.target.maxFitness) * 100.0
 
 	// all done - store our results and return the fitness
 	ind.fitness = fitness
