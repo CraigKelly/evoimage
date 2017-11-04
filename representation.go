@@ -24,7 +24,7 @@ import (
 
 // colorDist return a positive measure of distance between two colors
 // currently this is Euclidean distance ignoring Alpha
-func colorDist(c1 color.RGBA, c2 color.RGBA) float64 {
+func colorDist(c1 color.NRGBA, c2 color.NRGBA) float64 {
 	rd := math.Pow(float64(c1.R)-float64(c2.R), 2.0)
 	gd := math.Pow(float64(c1.G)-float64(c2.G), 2.0)
 	bd := math.Pow(float64(c1.B)-float64(c2.B), 2.0)
@@ -38,9 +38,9 @@ func colorDist(c1 color.RGBA, c2 color.RGBA) float64 {
 // ImageTarget is the image we are actually trying to reproduce
 type ImageTarget struct {
 	fileName   string
-	imageData  *image.RGBA
-	imageMode  *color.RGBA
-	imageMean  *color.RGBA
+	imageData  *image.NRGBA
+	imageMode  *color.NRGBA
+	imageMean  *color.NRGBA
 	maxFitness float64
 }
 
@@ -57,9 +57,9 @@ func NewImageTarget(fileName string) (*ImageTarget, error) {
 		return nil, err
 	}
 
-	// Make sure that the image is actually in RGBA format
+	// Make sure that the image is actually in NRGBA format
 	b := simg.Bounds()
-	img := image.NewRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
+	img := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
 	draw.Draw(img, img.Bounds(), simg, b.Min, draw.Src)
 
 	// Calculate max fitness
@@ -80,7 +80,7 @@ func NewImageTarget(fileName string) (*ImageTarget, error) {
 }
 
 func (it *ImageTarget) calcStats() {
-	counts := make(map[color.RGBA]uint)
+	counts := make(map[color.NRGBA]uint)
 	bnd := it.imageData.Bounds()
 	pixCount := 0
 	r := float64(0.0)
@@ -88,10 +88,10 @@ func (it *ImageTarget) calcStats() {
 	b := float64(0.0)
 	a := float64(0.0)
 
-	var clr color.RGBA
+	var clr color.NRGBA
 	for y := bnd.Min.Y; y < bnd.Max.Y; y++ {
 		for x := bnd.Min.X; x < bnd.Max.X; x++ {
-			clr = it.imageData.RGBAAt(x, y)
+			clr = it.imageData.NRGBAAt(x, y)
 			counts[clr]++
 			pixCount++
 			r += float64(clr.R)
@@ -101,7 +101,7 @@ func (it *ImageTarget) calcStats() {
 		}
 	}
 
-	var modeClr color.RGBA
+	var modeClr color.NRGBA
 	var modeCount uint
 	for clr, count := range counts {
 		if count > modeCount {
@@ -111,7 +111,7 @@ func (it *ImageTarget) calcStats() {
 	}
 
 	pc := float64(pixCount)
-	meanClr := color.RGBA{
+	meanClr := color.NRGBA{
 		R: uint8(r / pc),
 		G: uint8(g / pc),
 		B: uint8(b / pc),
@@ -124,7 +124,7 @@ func (it *ImageTarget) calcStats() {
 }
 
 // ImageMode returns the most common color in the image (use as a background color)
-func (it *ImageTarget) ImageMode() color.RGBA {
+func (it *ImageTarget) ImageMode() color.NRGBA {
 	if it.imageMode == nil {
 		it.calcStats()
 	}
@@ -133,7 +133,7 @@ func (it *ImageTarget) ImageMode() color.RGBA {
 }
 
 // ImageMean return the average color (by averaging each color channel)
-func (it *ImageTarget) ImageMean() color.RGBA {
+func (it *ImageTarget) ImageMean() color.NRGBA {
 	if it.imageMean == nil {
 		it.calcStats()
 	}
@@ -147,7 +147,7 @@ func (it *ImageTarget) ImageMean() color.RGBA {
 // Gene represents single item in a genome
 type Gene struct {
 	destBounds *image.Rectangle
-	destColor  *color.RGBA
+	destColor  *color.NRGBA
 }
 
 // NewGene creates a random gene instance
@@ -163,7 +163,7 @@ func NewGene(src *ImageTarget) *Gene {
 		rand.Intn(xrng)+b.Min.X, rand.Intn(yrng)+b.Min.Y,
 	)
 
-	var clr color.RGBA = color.RGBA{
+	var clr color.NRGBA = color.NRGBA{
 		R: uint8(rand.Intn(256)),
 		G: uint8(rand.Intn(256)),
 		B: uint8(rand.Intn(256)),
@@ -180,7 +180,7 @@ func NewGene(src *ImageTarget) *Gene {
 func (g *Gene) Copy() *Gene {
 	newg := Gene{
 		destBounds: new(image.Rectangle),
-		destColor:  new(color.RGBA),
+		destColor:  new(color.NRGBA),
 	}
 	*newg.destBounds = *g.destBounds
 	*newg.destColor = *g.destColor
@@ -223,8 +223,13 @@ func (ind *Individual) Fitness() float64 {
 		return ind.fitness
 	}
 
+	// TODO: when we switch to rectangles, we'll be drawing to RGBA (although we
+	// can still use the NRGBA for each polygon since the stroke color is set via
+	// the color interface). We'll need to do a final image copy to NRGBA to make
+	// sure that our pixel colors are correct for the fitness loop below
+
 	// init image: color entire rectange from src.ImageMode
-	img := image.NewRGBA(ind.target.imageData.Bounds())
+	img := image.NewNRGBA(ind.target.imageData.Bounds())
 	draw.Draw(img, img.Bounds(), &image.Uniform{ind.target.ImageMode()}, image.ZP, draw.Src)
 
 	// Now we need to draw all the rectangles in our genome
@@ -238,8 +243,8 @@ func (ind *Individual) Fitness() float64 {
 	b := img.Bounds()
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
-			c1 := img.RGBAAt(x, y)
-			c2 := ind.target.imageData.RGBAAt(x, y)
+			c1 := img.NRGBAAt(x, y)
+			c2 := ind.target.imageData.NRGBAAt(x, y)
 			fitness += colorDist(c1, c2)
 		}
 	}

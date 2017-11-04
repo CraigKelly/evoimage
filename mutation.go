@@ -37,7 +37,7 @@ func mutateColorCoord(c uint8) uint8 {
 
 // Mutation returns a mutated individual: WHICH IS CURRENTLY INPLACE
 func Mutation(ind *Individual, rate float64) *Individual {
-	var clr *color.RGBA
+	var clr *color.NRGBA
 
 	// We can precompute these
 	lim := ind.target.imageData.Bounds()
