@@ -52,9 +52,9 @@ func evalPop(pop Population, cores int) {
 
 func main() {
 	flags := flag.NewFlagSet("evoimage", flag.ExitOnError)
-	mutationRate := flags.Float64("mutationRate", 0.10, "Mutation rate to use")
+	mutationRate := flags.Float64("mutationRate", 0.08, "Mutation rate to use")
 	crossOverRate := flags.Float64("crossoverRate", 0.60, "Crossover rate to use")
-	popSize := flags.Int("popSize", 300, "Population size in a generation")
+	popSize := flags.Int("popSize", 200, "Population size in a generation")
 	image := flags.String("image", "", "File name of target image")
 
 	pcheck(flags.Parse(os.Args[1:]))
