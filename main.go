@@ -164,7 +164,7 @@ func main() {
 		population[0].Save("latest.jpg")
 
 		oldPop := population
-		population = Population(make([]*Individual, 0, *popSize))
+		population = Population(make([]*Individual, 0, adaptPopSize+5+(stallCount/2)))
 
 		// Elitism - we keep best 5 individuals AND a shuffled copy of the best 5
 		for i := 0; i < 5; i++ {
