@@ -91,7 +91,7 @@ func Mutation(ind *Individual, rate float64) *Individual {
 func Shuffle(ind *Individual) *Individual {
 	clone := NewIndividual(ind.target)
 	for write, read := range rand.Perm(len(clone.genes)) {
-		clone.genes[write] = ind.genes[read]
+		clone.genes[write] = ind.genes[read].Copy()
 	}
 	return clone
 }

@@ -176,6 +176,17 @@ func NewGene(src *ImageTarget) *Gene {
 	}
 }
 
+// Copy returns a pointer to a proper deep copy of a Gene
+func (g *Gene) Copy() *Gene {
+	newg := Gene{
+		destBounds: new(image.Rectangle),
+		destColor:  new(color.RGBA),
+	}
+	*newg.destBounds = *g.destBounds
+	*newg.destColor = *g.destColor
+	return &newg
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Our candidate image - aka an individual genome, made up of Gene's
 

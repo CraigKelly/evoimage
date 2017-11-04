@@ -13,12 +13,8 @@ func Crossover(parent1 *Individual, parent2 *Individual, rate float64) (*Individ
 			g1, g2 = g2, g1
 		}
 
-		var copy1, copy2 Gene
-		copy1 = *g1
-		copy2 = *g2
-
-		child1.genes[idx] = &copy1
-		child2.genes[idx] = &copy2
+		child1.genes[idx] = g1.Copy()
+		child2.genes[idx] = g2.Copy()
 	}
 
 	return child1, child2
