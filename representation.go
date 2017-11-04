@@ -167,7 +167,7 @@ func NewGene(src *ImageTarget) *Gene {
 		R: uint8(rand.Intn(256)),
 		G: uint8(rand.Intn(256)),
 		B: uint8(rand.Intn(256)),
-		A: uint8(rand.Intn(8)),
+		A: uint8(0),
 	}
 
 	return &Gene{
