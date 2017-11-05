@@ -16,7 +16,7 @@ import (
 // TODO: update docs about guassian mutation
 // TODO: use triangles instead of rectangle
 // TODO: allow size limiting of rectangles AND report size across solutions
-// TODO: need table with triangle count and size with outputs
+// TODO: need table with triangle count and size with outputs (final fitness score?)
 // TODO: consider a goroutine for logging once we add triangle size/count to log
 
 //////////////////////////////////////////////////////////////////////////
