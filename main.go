@@ -110,7 +110,7 @@ func main() {
 	log.Printf("Working with %d cores\n", cores)
 
 	tournSize := 5
-	lastBest := float64(0.0)
+	lastBest := float64(100.0)
 	stallCount := 0
 	adaptMutRate := *mutationRate
 	adaptPopSize := *popSize
