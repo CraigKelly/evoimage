@@ -156,7 +156,7 @@ func main() {
 		} else {
 			tournSize = 2
 		}
-		if stallCount > 3 {
+		if stallCount > 1 {
 			xts := 0
 			if stallCount < 25 {
 				xts = 1
