@@ -109,13 +109,25 @@ func main() {
 	}
 	log.Printf("Working with %d cores\n", cores)
 
-	tournSize := 1 // special: first tournament size will be two
+	tournSize := 5
 	lastBest := float64(0.0)
 	stallCount := 0
 	adaptMutRate := *mutationRate
 	adaptPopSize := *popSize
+	maxMutRate := 1.25 * *mutationRate
 
 	for generation := 0; generation < 100000; generation++ {
+		// Additional stopping conditions
+		if stallCount > 50 {
+			fmt.Printf("Stall count == %d, stopping\n", stallCount)
+			break
+		}
+		if lastBest < 0.5 {
+			// This one will probaby never happen (99.5% of optimal)
+			fmt.Printf("Best fitness == %f, stopping\n", lastBest)
+			break
+		}
+
 		// Image creation and evaluation across all cores
 		evalPop(population, cores)
 
@@ -132,14 +144,33 @@ func main() {
 		}
 		lastBest = best
 
-		tournSize++
-		if tournSize > 5 {
+		// Fitness is supposed to be minimized and is 0-100. We constrict the
+		// tournament as we get closer to the theoretical best score
+		// However, we will increase our tournament size if we have stalled
+		// Note that we also adaptively increase mutation rate and population
+		// size when we stall
+		if best > 35.0 {
+			tournSize = 4
+		} else if best > 25.0 {
+			tournSize = 3
+		} else {
 			tournSize = 2
 		}
+		if stallCount > 3 {
+			xts := 0
+			if stallCount < 25 {
+				xts = 1
+			} else if stallCount < 45 {
+				xts = 2
+			} else {
+				xts = 3
+			}
+			tournSize += xts
+		}
 
-		adaptMutRate = *mutationRate + (0.015 * float64(stallCount))
-		if adaptMutRate > 0.25 {
-			adaptMutRate = 0.25
+		adaptMutRate = *mutationRate + (0.0035 * float64(stallCount))
+		if adaptMutRate > maxMutRate {
+			adaptMutRate = maxMutRate
 		}
 
 		adaptPopSize = *popSize + (stallCount * 2)
@@ -182,13 +213,6 @@ func main() {
 
 			population = append(population, Mutation(child1, adaptMutRate))
 			population = append(population, Mutation(child2, adaptMutRate))
-		}
-
-		// Inject randomness if we are stalled
-		for i := 0; i < (stallCount / 2); i++ {
-			ind := NewIndividual(target)
-			ind.RandInit()
-			population = append(population, ind)
 		}
 	}
 
