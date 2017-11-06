@@ -52,9 +52,9 @@ func evalPop(pop Population, cores int) {
 
 func main() {
 	flags := flag.NewFlagSet("evoimage", flag.ExitOnError)
-	mutationRate := flags.Float64("mutationRate", 0.08, "Mutation rate to use")
+	mutationRate := flags.Float64("mutationRate", 0.10, "Mutation rate to use")
 	crossOverRate := flags.Float64("crossoverRate", 0.60, "Crossover rate to use")
-	popSize := flags.Int("popSize", 200, "Population size in a generation")
+	popSize := flags.Int("popSize", 300, "Population size in a generation")
 	image := flags.String("image", "", "File name of target image")
 
 	pcheck(flags.Parse(os.Args[1:]))
@@ -149,9 +149,9 @@ func main() {
 		// However, we will increase our tournament size if we have stalled
 		// Note that we also adaptively increase mutation rate and population
 		// size when we stall
-		if best > 35.0 {
+		if best > 33.0 {
 			tournSize = 4
-		} else if best > 25.0 {
+		} else if best > 8.0 {
 			tournSize = 3
 		} else {
 			tournSize = 2
