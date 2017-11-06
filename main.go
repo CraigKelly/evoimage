@@ -114,7 +114,7 @@ func main() {
 	stallCount := 0
 	adaptMutRate := *mutationRate
 	adaptPopSize := *popSize
-	maxMutRate := 1.25 * *mutationRate
+	maxMutRate := 1.30 * *mutationRate
 
 	for generation := 0; generation < 100000; generation++ {
 		// Additional stopping conditions
@@ -158,9 +158,9 @@ func main() {
 		}
 		if stallCount > 1 {
 			xts := 0
-			if stallCount < 25 {
+			if stallCount < 15 {
 				xts = 1
-			} else if stallCount < 45 {
+			} else if stallCount < 30 {
 				xts = 2
 			} else {
 				xts = 3
