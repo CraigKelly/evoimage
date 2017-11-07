@@ -17,8 +17,7 @@ import (
 // TODO: make sure adaptive stuff is properly documented
 // TODO: update docs about fitness scaled by max fitness
 // TODO: update docs about guassian mutation
-// TODO: use triangles instead of rectangle
-// TODO: allow size limiting of rectangles AND report size across solutions
+// TODO: allow size limiting of triangles AND report size across solutions
 // TODO: need table with triangle count and size with outputs (final fitness score?)
 // TODO: consider a goroutine for logging once we add triangle size/count to log
 
@@ -149,8 +148,8 @@ func (it *ImageTarget) ImageMean() color.NRGBA {
 
 // Gene represents single item in a genome
 type Gene struct {
-	destBounds *image.Rectangle
-	destColor  *color.NRGBA
+	destVertices []image.Point
+	destColor    *color.NRGBA
 }
 
 // NewGene creates a random gene instance
@@ -159,13 +158,14 @@ func NewGene(src *ImageTarget) *Gene {
 	yrng := (b.Max.Y - b.Min.Y) + 1
 	xrng := (b.Max.X - b.Min.X) + 1
 
-	// Copy the canonical rectangle for our pointer below
-	var rct image.Rectangle
-	rct = image.Rect(
-		rand.Intn(xrng)+b.Min.X, rand.Intn(yrng)+b.Min.Y,
-		rand.Intn(xrng)+b.Min.X, rand.Intn(yrng)+b.Min.Y,
-	)
+	// Create a triangle (a series of 3 points)
+	vs := []image.Point{
+		image.Pt(rand.Intn(xrng)+b.Min.X, rand.Intn(yrng)+b.Min.Y),
+		image.Pt(rand.Intn(xrng)+b.Min.X, rand.Intn(yrng)+b.Min.Y),
+		image.Pt(rand.Intn(xrng)+b.Min.X, rand.Intn(yrng)+b.Min.Y),
+	}
 
+	// Create random color with alpha=0 (totally transparent)
 	var clr color.NRGBA = color.NRGBA{
 		R: uint8(rand.Intn(256)),
 		G: uint8(rand.Intn(256)),
@@ -174,18 +174,18 @@ func NewGene(src *ImageTarget) *Gene {
 	}
 
 	return &Gene{
-		destBounds: &rct,
-		destColor:  &clr,
+		destVertices: vs,
+		destColor:    &clr,
 	}
 }
 
 // Copy returns a pointer to a proper deep copy of a Gene
 func (g *Gene) Copy() *Gene {
 	newg := Gene{
-		destBounds: new(image.Rectangle),
-		destColor:  new(color.NRGBA),
+		destVertices: make([]image.Point, len(g.destVertices)),
+		destColor:    new(color.NRGBA),
 	}
-	*newg.destBounds = *g.destBounds
+	copy(newg.destVertices, g.destVertices)
 	*newg.destColor = *g.destColor
 	return &newg
 }
@@ -226,8 +226,6 @@ func (ind *Individual) Fitness() float64 {
 		return ind.fitness
 	}
 
-	// TODO: switch from rectangles to triangles
-
 	// init image: color entire rectange from src.ImageMode
 	img := image.NewNRGBA(ind.target.imageData.Bounds())
 	draw.Draw(img, img.Bounds(), &image.Uniform{ind.target.ImageMode()}, image.ZP, draw.Src)
@@ -240,15 +238,19 @@ func (ind *Individual) Fitness() float64 {
 	// draw all our polygons
 	gc := draw2dimg.NewGraphicContext(img2d)
 	gc.SetLineWidth(1)
-	var r *image.Rectangle
+
 	for _, gene := range ind.genes {
 		gc.SetFillColor(gene.destColor)
 		gc.SetStrokeColor(gene.destColor)
-		r = gene.destBounds
-		gc.MoveTo(float64(r.Min.X), float64(r.Min.Y))
-		gc.LineTo(float64(r.Max.X), float64(r.Min.Y))
-		gc.LineTo(float64(r.Max.X), float64(r.Max.Y))
-		gc.LineTo(float64(r.Min.X), float64(r.Max.Y))
+
+		for idx, pt := range gene.destVertices {
+			if idx == 0 {
+				gc.MoveTo(float64(pt.X), float64(pt.Y))
+			} else {
+				gc.LineTo(float64(pt.X), float64(pt.Y))
+			}
+		}
+
 		gc.Close()
 		gc.FillStroke()
 	}

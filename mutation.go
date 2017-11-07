@@ -44,6 +44,12 @@ func Mutation(ind *Individual, rate float64) *Individual {
 	mnx, mny := float64(lim.Min.X), float64(lim.Min.Y)
 	mxx, mxy := float64(lim.Max.X), float64(lim.Max.Y)
 
+	mutatePoint := func(p image.Point) image.Point {
+		p.X = int(mutateNorm(float64(p.X), 3.0, mnx, mxx))
+		p.Y = int(mutateNorm(float64(p.Y), 3.0, mny, mxy))
+		return p
+	}
+
 	for _, curr := range ind.genes {
 		// colors
 		clr = curr.destColor
@@ -60,27 +66,11 @@ func Mutation(ind *Individual, rate float64) *Individual {
 			clr.A = mutateColorCoord(clr.A)
 		}
 
-		// coords
-		p0 := rand.Float64() <= rate
-		p1 := rand.Float64() <= rate
-		if p0 || p1 {
-			bnd := curr.destBounds
-			x0, y0 := bnd.Min.X, bnd.Min.Y
-			x1, y1 := bnd.Max.Y, bnd.Max.Y
-
-			if p0 {
-				x0 = int(mutateNorm(float64(x0), 4.0, mnx, mxx))
-				y0 = int(mutateNorm(float64(x1), 4.0, mny, mxy))
+		// vertices
+		for idx := range curr.destVertices {
+			if rand.Float64() <= rate {
+				curr.destVertices[idx] = mutatePoint(curr.destVertices[idx])
 			}
-
-			if p1 {
-				x1 = int(mutateNorm(float64(x1), 4.0, mnx, mxx))
-				y1 = int(mutateNorm(float64(y1), 4.0, mny, mxy))
-			}
-
-			var newRct image.Rectangle
-			newRct = image.Rect(x0, y0, x1, y1) // Will handle coord swap
-			curr.destBounds = &newRct
 		}
 	}
 
