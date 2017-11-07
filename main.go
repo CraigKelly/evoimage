@@ -16,6 +16,8 @@ import (
 	"time"
 )
 
+// TODO: unit tests
+
 // helper for checking errors
 func pcheck(err error) {
 	if err != nil {
