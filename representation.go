@@ -9,6 +9,8 @@ import (
 	"math"
 	"math/rand"
 	"os"
+
+	"github.com/llgcode/draw2d/draw2dimg"
 )
 
 // TODO: need to check on min/max/avg of alpha - seems like we get too opaque too fast
@@ -224,24 +226,41 @@ func (ind *Individual) Fitness() float64 {
 		return ind.fitness
 	}
 
-	// TODO: when we switch to rectangles, we'll be drawing to RGBA (although we
-	// can still use the NRGBA for each polygon since the stroke color is set via
-	// the color interface). We'll need to do a final image copy to NRGBA to make
-	// sure that our pixel colors are correct for the fitness loop below
+	// TODO: switch from rectangles to triangles
 
 	// init image: color entire rectange from src.ImageMode
 	img := image.NewNRGBA(ind.target.imageData.Bounds())
 	draw.Draw(img, img.Bounds(), &image.Uniform{ind.target.ImageMode()}, image.ZP, draw.Src)
 
-	// Now we need to draw all the rectangles in our genome
+	// Make sure that the image is actually in RGBA format for draw2d
+	b := img.Bounds()
+	img2d := image.NewRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
+	draw.Draw(img2d, img2d.Bounds(), img, b.Min, draw.Src)
+
+	// draw all our polygons
+	gc := draw2dimg.NewGraphicContext(img2d)
+	gc.SetLineWidth(1)
+	var r *image.Rectangle
 	for _, gene := range ind.genes {
-		draw.Draw(img, *gene.destBounds, &image.Uniform{gene.destColor}, image.ZP, draw.Over)
+		gc.SetFillColor(gene.destColor)
+		gc.SetStrokeColor(gene.destColor)
+		r = gene.destBounds
+		gc.MoveTo(float64(r.Min.X), float64(r.Min.Y))
+		gc.LineTo(float64(r.Max.X), float64(r.Min.Y))
+		gc.LineTo(float64(r.Max.X), float64(r.Max.Y))
+		gc.LineTo(float64(r.Min.X), float64(r.Max.Y))
+		gc.Close()
+		gc.FillStroke()
 	}
+
+	// copy back to img and our NRGBA format
+	b = img2d.Bounds()
+	draw.Draw(img, img.Bounds(), img2d, b.Min, draw.Src)
 
 	// calculate fitness - the sum of the color distance pixel by pixel
 	fitness := float64(0.0)
 
-	b := img.Bounds()
+	b = img.Bounds()
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
 			c1 := img.NRGBAAt(x, y)
