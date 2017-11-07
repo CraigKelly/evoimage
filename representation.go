@@ -13,7 +13,6 @@ import (
 	"github.com/llgcode/draw2d/draw2dimg"
 )
 
-// TODO: need to check on min/max/avg of alpha - seems like we get too opaque too fast
 // TODO: make sure adaptive stuff is properly documented
 // TODO: update docs about fitness scaled by max fitness
 // TODO: update docs about guassian mutation

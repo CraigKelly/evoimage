@@ -27,7 +27,7 @@ func mutateNorm(src float64, sd float64, mn float64, mx float64) float64 {
 		newval = mx
 	}
 
-	return src + d
+	return newval
 }
 
 // Given a color coord (RGB), return a mutated coord
