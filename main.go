@@ -54,7 +54,7 @@ func evalPop(pop Population, cores int) {
 
 func main() {
 	flags := flag.NewFlagSet("evoimage", flag.ExitOnError)
-	mutationRate := flags.Float64("mutationRate", 0.10, "Mutation rate to use")
+	mutationRate := flags.Float64("mutationRate", 0.11, "Mutation rate to use")
 	crossOverRate := flags.Float64("crossoverRate", 0.60, "Crossover rate to use")
 	popSize := flags.Int("popSize", 300, "Population size in a generation")
 	image := flags.String("image", "", "File name of target image")
@@ -199,10 +199,10 @@ func main() {
 		oldPop := population
 		population = Population(make([]*Individual, 0, adaptPopSize+5+(stallCount/2)))
 
-		// Elitism - we keep best 5 individuals AND a shuffled copy of the best 5
+		// Elitism - we keep best 5 individuals AND a shuffled/mutated copy of the best 5
 		for i := 0; i < 5; i++ {
 			population = append(population, oldPop[i])
-			population = append(population, Shuffle(oldPop[i]))
+			population = append(population, Mutation(Shuffle(oldPop[i]), adaptMutRate))
 		}
 
 		// Now create rest of population with selection/crossover/mutation

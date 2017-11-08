@@ -32,7 +32,7 @@ func mutateNorm(src float64, sd float64, mn float64, mx float64) float64 {
 
 // Given a color coord (RGB), return a mutated coord
 func mutateColorCoord(c uint8) uint8 {
-	return uint8(mutateNorm(float64(c), 3.0, 0.0, 255.0))
+	return uint8(mutateNorm(float64(c), 5.0, 0.0, 255.0))
 }
 
 // Mutation returns a mutated individual: WHICH IS CURRENTLY INPLACE
@@ -45,8 +45,8 @@ func Mutation(ind *Individual, rate float64) *Individual {
 	mxx, mxy := float64(lim.Max.X), float64(lim.Max.Y)
 
 	mutatePoint := func(p image.Point) image.Point {
-		p.X = int(mutateNorm(float64(p.X), 3.0, mnx, mxx))
-		p.Y = int(mutateNorm(float64(p.Y), 3.0, mny, mxy))
+		p.X = int(mutateNorm(float64(p.X), 5.0, mnx, mxx))
+		p.Y = int(mutateNorm(float64(p.Y), 5.0, mny, mxy))
 		return p
 	}
 
