@@ -175,7 +175,9 @@ func main() {
 			adaptMutRate = maxMutRate
 		}
 
-		adaptPopSize = *popSize + (stallCount * 2)
+		// We add 2x stall count for a larger population. The other 2x are
+		// for the adaptive elitism below
+		adaptPopSize = *popSize + (stallCount * 4)
 
 		pcheck(dataLog.Write([]string{
 			fmt.Sprintf("%d", generation),
@@ -200,7 +202,8 @@ func main() {
 		population = Population(make([]*Individual, 0, adaptPopSize+5+(stallCount/2)))
 
 		// Elitism - we keep best 5 individuals AND a shuffled/mutated copy of the best 5
-		for i := 0; i < 5; i++ {
+		// We also adapt to the current stall count
+		for i := 0; i < (5 + stallCount); i++ {
 			population = append(population, oldPop[i])
 			population = append(population, Mutation(Shuffle(oldPop[i]), adaptMutRate))
 		}
