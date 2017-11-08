@@ -153,7 +153,7 @@ func main() {
 		// size when we stall
 		if best > 33.0 {
 			tournSize = 4
-		} else if best > 8.0 {
+		} else if best > 4.0 {
 			tournSize = 3
 		} else {
 			tournSize = 2
