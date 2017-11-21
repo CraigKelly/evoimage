@@ -198,7 +198,7 @@ type Individual struct {
 	fitness   float64
 	imageData image.Image
 	needImage bool
-	genes     [300]*Gene
+	genes     [500]*Gene
 }
 
 // NewIndividual creates a random individual
