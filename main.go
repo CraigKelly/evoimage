@@ -124,7 +124,7 @@ func main() {
 
 	for generation := 0; generation < 100000; generation++ {
 		// Additional stopping conditions
-		if stallCount > 50 {
+		if stallCount > 100 {
 			fmt.Printf("Stall count == %d, stopping\n", stallCount)
 			break
 		}
