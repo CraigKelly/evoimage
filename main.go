@@ -58,6 +58,7 @@ func main() {
 	crossOverRate := flags.Float64("crossoverRate", 0.60, "Crossover rate to use")
 	popSize := flags.Int("popSize", 300, "Population size in a generation")
 	image := flags.String("image", "", "File name of target image")
+	geneCount := flags.Int("geneCount", 100, "Number of genes (triangles) in an individual")
 
 	pcheck(flags.Parse(os.Args[1:]))
 
@@ -70,6 +71,9 @@ func main() {
 	if *popSize < 10 {
 		pcheck(errors.New("Invalid population size - must be at least 10"))
 	}
+	if *geneCount < 25 {
+		pcheck(errors.New("Gene Count must be >= 25"))
+	}
 	if image == nil || len(*image) < 1 {
 		pcheck(errors.New("Image filename is required"))
 	}
@@ -77,7 +81,7 @@ func main() {
 		pcheck(err)
 	}
 
-	log.Printf("Mutation:%f, Crossover:%f, Population:%d, Target:%s\n", *mutationRate, *crossOverRate, *popSize, *image)
+	log.Printf("Genes:%d, Mutation:%f, Crossover:%f, Population:%d, Target:%s\n", *geneCount, *mutationRate, *crossOverRate, *popSize, *image)
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -100,7 +104,7 @@ func main() {
 	log.Printf("Creating init pop of %d\n", *popSize)
 	population := Population(make([]*Individual, 0, *popSize))
 	for i := 0; i < *popSize; i++ {
-		ind := NewIndividual(target)
+		ind := NewIndividual(target, *geneCount)
 		ind.RandInit()
 		population = append(population, ind)
 	}

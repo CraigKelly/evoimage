@@ -198,16 +198,17 @@ type Individual struct {
 	fitness   float64
 	imageData image.Image
 	needImage bool
-	genes     [700]*Gene
+	genes     []*Gene
 }
 
 // NewIndividual creates a random individual
-func NewIndividual(src *ImageTarget) *Individual {
+func NewIndividual(src *ImageTarget, geneCount int) *Individual {
 	// For now we have a fixed genome
 	ind := Individual{
 		target:    src,
 		fitness:   -1.0,
 		needImage: true,
+		genes:     make([]*Gene, geneCount),
 	}
 	return &ind
 }
