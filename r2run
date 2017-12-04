@@ -1,0 +1,9 @@
+#!/bin/bash
+
+./script/single_pass 50 ./imgs/target-renoir2.jpg
+./script/single_pass 200 ./imgs/target-renoir2.jpg
+./script/single_pass 500 ./imgs/target-renoir2.jpg
+
+./script/single_pass 50 ./imgs/target-vernet.jpg
+./script/single_pass 200 ./imgs/target-vernet.jpg
+./script/single_pass 500 ./imgs/target-vernet.jpg
