@@ -45,8 +45,8 @@ func Mutation(ind *Individual, rate float64) *Individual {
 	mxx, mxy := float64(lim.Max.X), float64(lim.Max.Y)
 
 	mutatePoint := func(p image.Point) image.Point {
-		p.X = int(mutateNorm(float64(p.X), 12.0, mnx, mxx))
-		p.Y = int(mutateNorm(float64(p.Y), 12.0, mny, mxy))
+		p.X = int(mutateNorm(float64(p.X), 6.0, mnx, mxx))
+		p.Y = int(mutateNorm(float64(p.Y), 6.0, mny, mxy))
 		return p
 	}
 
