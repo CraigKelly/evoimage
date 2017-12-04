@@ -9,8 +9,15 @@ cd "$SCRIPT_DIR/.." || echo "Could not find output dir: this will probably fail"
 genes="$1"
 img="$2"
 
-if (( "${genes}" < "10" )); then
-    echo "Gene count must be >= 10"
+if [[ "${genes}" == "" ||  "${img}" == "" ]]; then
+    echo "Usage is gene_count target where"
+    echo "  gene_count is number of genes in a individual, >= 25"
+    echo "  target is a jpg image, preferably from the ./img dir"
+    exit 128
+fi
+
+if (( "${genes}" < "25" )); then
+    echo "Gene count must be >= 25"
     exit 1
 fi
 if [ ! -f "${img}" ]; then
@@ -35,17 +42,17 @@ rm -f latest.jpg
 rm -f "logs/${logfn}"
 make
 
-# TODO: remove popsize once this works
-./evoimage -image "${img}" -geneCount "${genes}" -popSize 10
+./evoimage -image "${img}" -geneCount "${genes}"
 
 ./script/output_ani
 
-cpdir="${stagedir}/${finalarc}"
+cpdir="${stagedir}/${finaldir}"
 mkdir -p "${cpdir}"
 cp latest.jpg "${cpdir}/"
 cp output/output.mp4 "${cpdir}/"
 cp "logs/${logfn}" "${cpdir}/"
 
 pushd "${stagedir}"
-tar -zcf "${finalarc} ${finaldir}"
+tar -zcf "${finalarc}" "${finaldir}"
 rm -fr "${finaldir}"
+popd
