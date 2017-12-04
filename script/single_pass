@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# Fail and stop on error
+set -e
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR/.." || echo "Could not find output dir: this will probably fail"
+
+genes="$1"
+img="$2"
+
+if (( "${genes}" < "10" )); then
+    echo "Gene count must be >= 10"
+    exit 1
+fi
+if [ ! -f "${img}" ]; then
+    echo "Could not find image file $1"
+    exit 2
+fi
+
+
+echo "${img} <= with ${genes} genes"
+
+base=$(basename "$img")
+logfn="${base}-log.csv"
+stagedir="cmpruns"
+finaldir="${genes}-${base}"
+finalarc="${finaldir}.tar.gz"
+
+echo "Assuming log file is logs/${logfn}"
+echo "Will create ${stagedir}/${finalarc}"
+
+rm -f output/*
+rm -f latest.jpg
+rm -f "logs/${logfn}"
+make
+
+# TODO: remove popsize once this works
+./evoimage -image "${img}" -geneCount "${genes}" -popSize 10
+
+./script/output_ani
+
+cpdir="${stagedir}/${finalarc}"
+mkdir -p "${cpdir}"
+cp latest.jpg "${cpdir}/"
+cp output/output.mp4 "${cpdir}/"
+cp "logs/${logfn}" "${cpdir}/"
+
+pushd "${stagedir}"
+tar -zcf "${finalarc} ${finaldir}"
+rm -fr "${finaldir}"
