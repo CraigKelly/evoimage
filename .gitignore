@@ -3,6 +3,7 @@
 evoimage
 latest.jpg
 output/
+logs/*.csv
 
 # Binaries for programs and plugins
 *.exe
