@@ -4,10 +4,10 @@ Simple attempt at evolving image reproductions
 
 ## Overview
 
-This project is currently experimental (as in pre-alpha). Once it is stabilized
-and there have been some decent results we will add a Results section. See
-`main.go` for command line options and the main loop. See `representation.go`
-for the main representation and encoding.
+This project is experimental and for fun. It doesn't really accomplish anything
+that is publication worthy, but you might enjoy playing with it.  See `main.go`
+for command line options and the main loop. See `representation.go` for the
+main representation and encoding.
 
 ## Implementation
 
@@ -31,7 +31,7 @@ See `representation.go`.
 
 ## Representation
 
-Each individual is an ordered list of genes where each gene is a rectangle and
+Each individual is an ordered list of genes where each gene is a triangle and
 a color in RGBA space (note our use of transparency for representation and
 drawing, but not in the final fitness function).
 
@@ -49,8 +49,8 @@ See `selection.go` and `main.go`.
 
 ## Mutation
 
-If a gene is selected for mutation given the current mutation rate, then it is
-replaced with a new random gene.
+We use Gaussian mutation. Currently the standard deviation is different for
+spatial and color coordinates and is hand-coded.
 
 The mutation rate currently receives a (capped) increase for every generation
 since we have failed to get an increase in the best fitness score.
@@ -71,7 +71,12 @@ See `crossover.go`.
 We copy the five best individuals to the next generation.
 
 We also add a *second* copy of the best five individuals, but with their genes
-shuffled.
+shuffled and mutated.
+
+## Installing
+
+You can just use the executable in the folder matching your operating system
+and architecture under dist.
 
 ## Building and running
 
@@ -131,8 +136,4 @@ The original full size CC JPEG's from above are in the `imgs` directory with
 the prefix `orig-`.  They have been scaled down so the largest dimension is 256
 pixels while preserving the original aspect ratio.  The scaled images used as
 target images are also in the `imgs` directory with the prefix `target`.
-
-Our initial attempt will be a Mondrian:
-
-![Mondrian](imgs/target-mondrian.jpg)
 
