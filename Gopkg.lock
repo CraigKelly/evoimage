@@ -11,7 +11,7 @@
   branch = "master"
   name = "github.com/llgcode/draw2d"
   packages = [".","draw2dbase","draw2dimg"]
-  revision = "dcbfbe505d35de8166ccfc47ff9e4bb020473e18"
+  revision = "f3e35015aa4f1232e03907ee3618af62dbaeab70"
 
 [[projects]]
   branch = "master"

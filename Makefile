@@ -13,6 +13,9 @@ $(BINARY): $(SOURCES) $(TESTED)
 install: build
 	go install
 
+dist: build
+	$(TOOLDIR)/dist
+
 clean:
 	rm -f $(BINARY) debug debug.test cover.out $(TESTED)
 	go clean
