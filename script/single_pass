@@ -40,7 +40,6 @@ echo "Will create ${stagedir}/${finalarc}"
 rm -f output/*
 rm -f latest.jpg
 rm -f "logs/${logfn}"
-make
 
 ./evoimage -image "${img}" -geneCount "${genes}"
 

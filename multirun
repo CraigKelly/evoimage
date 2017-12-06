@@ -1,0 +1,11 @@
+#!/bin/bash
+
+./script/single_pass 15 ./imgs/target-mondrian.jpg
+./script/single_pass 20 ./imgs/target-mondrian.jpg
+./script/single_pass 25 ./imgs/target-mondrian.jpg
+./script/single_pass 30 ./imgs/target-mondrian.jpg
+./script/single_pass 35 ./imgs/target-mondrian.jpg
+./script/single_pass 40 ./imgs/target-mondrian.jpg
+./script/single_pass 45 ./imgs/target-mondrian.jpg
+
+
