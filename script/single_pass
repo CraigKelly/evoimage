@@ -16,8 +16,8 @@ if [[ "${genes}" == "" ||  "${img}" == "" ]]; then
     exit 128
 fi
 
-if (( "${genes}" < "25" )); then
-    echo "Gene count must be >= 25"
+if (( "${genes}" < "2" )); then
+    echo "Gene count must be >= 2"
     exit 1
 fi
 if [ ! -f "${img}" ]; then

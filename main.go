@@ -71,8 +71,8 @@ func main() {
 	if *popSize < 10 {
 		pcheck(errors.New("Invalid population size - must be at least 10"))
 	}
-	if *geneCount < 25 {
-		pcheck(errors.New("Gene Count must be >= 25"))
+	if *geneCount < 2 {
+		pcheck(errors.New("Gene Count must be >= 2"))
 	}
 	if image == nil || len(*image) < 1 {
 		pcheck(errors.New("Image filename is required"))
